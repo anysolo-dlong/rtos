@@ -34,7 +34,7 @@ include_directories( extLibs/cmsis )
 file(GLOB_RECURSE mclibSources anysolo/mclib/*.c*)
 add_library(mclib ${mclibSources})
 
-file(GLOB_RECURSE rtosSources anysolo/rtos/*.c* anysolo/rtos/port/stm32f4xx/*.c* anysolo/rtos/port/stm32f4xx/*.s)
+file(GLOB_RECURSE rtosSources anysolo/rtos/*.c* anysolo/rtos/port/stm32f4xx/*.c* anysolo/rtos/port/stm32f4xx/*.s extLibs/syscalls.c)
 add_library(rtos ${rtosSources})
 
 set(test1ElfFname "test1.elf")
