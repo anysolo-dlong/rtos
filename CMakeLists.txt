@@ -19,7 +19,7 @@ set(def_cflags "-DSTM32F4XX -DSTM32F40_41xxx -DHSE_VALUE=8000000 -D__FPU_PRESENT
 set(CMAKE_C_FLAGS "${mcuFlags} ${general_cflags} ${def_cflags} ${debugOpts}" )
 set(CMAKE_CXX_FLAGS "${mcuFlags} ${general_cflags} ${def_cflags} ${debugOpts} ${cppOpts}" )
 
-set(linkerScript "Utilities/stm32_flash.ld")
+set(linkerScript "stm32_flash.ld")
 
 
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
@@ -28,21 +28,24 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
-include_directories( extLibs )
+include_directories( extLibs/cmsis )
 
 
 file(GLOB_RECURSE mclibSources anysolo/mclib/*.c*)
 add_library(mclib ${mclibSources})
 
-#set(firmwareElfFname "hwc.elf")
-#set(firmwareBinFname "hwc.bin")
+file(GLOB_RECURSE rtosSources anysolo/rtos/*.c* anysolo/rtos/port/stm32f4xx/*.c* anysolo/rtos/port/stm32f4xx/*.s)
+add_library(rtos ${rtosSources})
 
-#file(GLOB hwcSourceFiles ${PROJECT_SOURCE_DIR}/*.s ${PROJECT_SOURCE_DIR}/*.c* Libraries/syscall/syscalls.c hardware/*.c* hardware/*.s olibs/*.c* )
-#add_executable(${firmwareElfFname} ${hwcSourceFiles})
-#target_include_directories( ${firmwareElfFname} PUBLIC Libraries/STM32F4xx_StdPeriph_Driver/inc )
-#target_link_libraries(${firmwareElfFname} stdPeriph m c gcc)
-#set_target_properties(${firmwareElfFname} PROPERTIES LINK_FLAGS "${def_cflags} -u _scanf_float -u _printf_float -Wl,--gc-sections,-T${linkerScript},-Map,map.map" )
+set(test1ElfFname "test1.elf")
+set(test1BinFname "test1.bin")
 
-#add_custom_command(TARGET ${firmwareElfFname} POST_BUILD
-#  COMMAND arm-none-eabi-objcopy -O binary binary/${firmwareElfFname} binary/${firmwareBinFname}
-#)
+file(GLOB_RECURSE test1SourceFiles tests/test1/*.c* )
+
+add_executable(${test1ElfFname} ${test1SourceFiles})
+target_link_libraries(${test1ElfFname} rtos mclib m c gcc)
+set_target_properties(${test1ElfFname} PROPERTIES LINK_FLAGS "${def_cflags} -u _scanf_float -u _printf_float -Wl,--gc-sections,-T${linkerScript},-Map,map.map" )
+
+add_custom_command(TARGET ${test1ElfFname} POST_BUILD
+  COMMAND arm-none-eabi-objcopy -O binary bin/${test1ElfFname} bin/${test1BinFname}
+)
