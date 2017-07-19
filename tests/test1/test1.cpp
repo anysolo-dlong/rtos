@@ -7,4 +7,19 @@ int main(void) {
 
   volatile int i;
   i = 1;
+
+  SysTick_Config (SystemCoreClock / 1000);
+
+  volatile int t;
+  volatile int c;
+  for(;;)
+  {
+    t = SysTick->VAL;
+    c = SysTick->CTRL;
+  }
+}
+
+extern "C" void SysTick_Handler() {
+  volatile int t;
+  t = 0;
 }
