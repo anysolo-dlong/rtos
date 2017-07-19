@@ -14,7 +14,7 @@ set(cppOpts "-std=c++11")
 
 set(mcuFlags "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -finline-functions -Wdouble-promotion" )
 set(general_cflags "-Wall -ffunction-sections -fdata-sections" )
-set(def_cflags "-DSTM32F4XX -DSTM32F40_41xxx -DHSE_VALUE=8000000 -D__FPU_PRESENT=1 -D__FPU_USED=1 -DARM_MATH_CM4" )
+set(def_cflags "-DSTM32F4XX -DSTM32F407xx -DHSE_VALUE=8000000 -DHSI_VALUE=16000000 -DARM_MATH_CM4" )
 
 set(CMAKE_C_FLAGS "${mcuFlags} ${general_cflags} ${def_cflags} ${debugOpts}" )
 set(CMAKE_CXX_FLAGS "${mcuFlags} ${general_cflags} ${def_cflags} ${debugOpts} ${cppOpts}" )
@@ -28,7 +28,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
-include_directories( extLibs/cmsis )
+include_directories( extLibs/cmsis anysolo/rtos/port/stm32f4xx/hal/inc )
 
 
 file(GLOB_RECURSE mclibSources anysolo/mclib/*.c*)
@@ -43,6 +43,7 @@ set(test1BinFname "test1.bin")
 file(GLOB_RECURSE test1SourceFiles tests/test1/*.c* )
 
 add_executable(${test1ElfFname} ${test1SourceFiles})
+target_include_directories( ${test1ElfFname} PUBLIC anysolo/rtos/port/stm32f4xx )
 target_link_libraries(${test1ElfFname} rtos mclib m c gcc)
 set_target_properties(${test1ElfFname} PROPERTIES LINK_FLAGS "${def_cflags} -u _scanf_float -u _printf_float -Wl,--gc-sections,-T${linkerScript},-Map,map.map" )
 
