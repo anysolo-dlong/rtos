@@ -18,6 +18,7 @@ set(def_cflags "-DSTM32F4XX -DSTM32F407xx -DHSE_VALUE=8000000 -DHSI_VALUE=160000
 
 set(CMAKE_C_FLAGS "${mcuFlags} ${general_cflags} ${def_cflags} ${debugOpts}" )
 set(CMAKE_CXX_FLAGS "${mcuFlags} ${general_cflags} ${def_cflags} ${debugOpts} ${cppOpts}" )
+SET(ASM_OPTIONS "${mcuFlags}")
 
 set(linkerScript "stm32_flash.ld")
 
@@ -40,7 +41,7 @@ add_library(rtos ${rtosSources})
 set(test1ElfFname "test1.elf")
 set(test1BinFname "test1.bin")
 
-file(GLOB_RECURSE test1SourceFiles tests/test1/*.c* )
+file(GLOB_RECURSE test1SourceFiles tests/test1/*.c* tests/test1/*.s)
 
 add_executable(${test1ElfFname} ${test1SourceFiles})
 target_include_directories( ${test1ElfFname} PUBLIC anysolo/rtos/port/stm32f4xx )
