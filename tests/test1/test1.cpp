@@ -118,7 +118,7 @@ extern "C" void SVC_Handler()__attribute__ ((naked));
 
 extern "C" void SVC_Handler()
 {
-  asm
+  asm volatile
   (
       "tst lr, #4\n"
       "ite eq\n"
@@ -127,7 +127,6 @@ extern "C" void SVC_Handler()
       "push {lr}\n"
       "bl svcHandler_C\n"
       "pop {lr}\n"
-      "isb\n"
       "bx lr\n"
       ".align 4\n"
   );
@@ -168,16 +167,17 @@ extern "C" void SysTick_Handler()
 extern "C" void PendSV_Handler() __attribute__ ((naked));
 extern "C" void PendSV_Handler()
 {
-  asm
+  asm volatile
   (
-      "mrs r0, psp\n"
-      "stmdb r0!, {r4-r11, r14}\n"
       "push {lr}\n"
+      "mrs r0, psp\n"
+      "isb\n"
+      "stmdb r0!, {r4-r11, r14}\n"
       "bl pendSvHandler_C\n"
       "ldmia r0!, {r4-r11, r14}\n"
-      "pop {lr}\n"
       "msr psp, r0\n"
       "isb\n"
+      "pop {lr}\n"
       "bx lr\n"
       ".align 4\n"
   );
