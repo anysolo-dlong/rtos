@@ -203,7 +203,7 @@ g_pfnVectors:
   .word     SPI2_IRQHandler                   /* SPI2                         */
   .word     USART1_IRQHandler                 /* USART1                       */
   .word     USART2_IRQHandler                 /* USART2                       */
-  .word     olibsUartIrqHandler_3             /* USART3                       */
+  .word     USART3_IRQHandler                 /* USART3                       */
   .word     EXTI15_10_IRQHandler              /* External Line[15:10]s        */
   .word     RTC_Alarm_IRQHandler              /* RTC Alarm (A and B) through EXTI Line */
   .word     OTG_FS_WKUP_IRQHandler            /* USB OTG FS Wakeup through EXTI line */
@@ -398,8 +398,8 @@ g_pfnVectors:
    .weak      USART2_IRQHandler
    .thumb_set USART2_IRQHandler,Default_Handler
 
-   .weak      olibsUartIrqHandler_3
-   .thumb_set olibsUartIrqHandler_3,Default_Handler
+   .weak      USART3_IRQHandler
+   .thumb_set USART3_IRQHandler,Default_Handler
 
    .weak      EXTI15_10_IRQHandler
    .thumb_set EXTI15_10_IRQHandler,Default_Handler

@@ -4,6 +4,7 @@
 #include "core_cm4.h"
 
 
+
 struct StackFrame1
 {
   uint32_t
@@ -18,9 +19,22 @@ struct StackFrame1
   ;
 };
 
+struct StackFrameAddRegs {
+  uint32_t
+    r4, r5, r6, r7, r8, r9, r10, r11, r14
+  ;
+
+};
+
+struct FullStackFrame {
+  StackFrameAddRegs addRegs;
+  StackFrame1       subFrame1;
+};
+
+
 void rtos_init();
 extern "C" void svcHandler_C(void*);
-extern "C" void pendSvHandler_C(void* _stackFrame);
+extern "C" void* pendSvHandler_C(void* _stackFrame);
 
 void task0(void);
 void task1(void);
@@ -28,17 +42,19 @@ void task1(void);
 void rtos_startFirstTask(StackFrame1& initialFrame);
 
 
+volatile int currentTask = 0;
 
-StackFrame1 threadStackFrames[2];
-int currentTask = 0;
+volatile uint32_t thread0Stack[128];
+volatile uint32_t thread1Stack[128];
 
-void os_init()
-{
+volatile void* threadPsp[2];
 
-}
+volatile uint32_t tickCounter = 0;
 
 
 int main(void) {
+  for(volatile long i = 0; i < 3000000; i++) ;
+
   HAL_Init();
   SystemInit();
 
@@ -49,41 +65,52 @@ int main(void) {
 
   BSP_LED_Toggle(LED3);
 
-  volatile int i;
-  i = 1;
-
   SysTick_Config (SystemCoreClock / 1000);
 
-  //  __set_CONTROL(0x3); // Switch to use Process Stack, unprivileged state
-  //  __ISB();
-    asm("svc #1");
+  NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
 
-  volatile int t;
-  volatile int c;
-  for(;;)
-  {
-    t = SysTick->VAL;
-    c = SysTick->CTRL;
-  }
+  __set_PSP(uint32_t(thread0Stack) + sizeof(thread0Stack));
+
+  __ISB();
+  __set_CONTROL(0x3); // Switch to use Process Stack, unprivileged state
+  __ISB();
+  asm("svc #1");
+
+  for(;;) {}
 }
 
-int tickCounter = 0;
 
 void task0(void)
 {
+  uint32_t prevTick = tickCounter;
+  uint32_t cnt = 0;
+
   while(true)
   {
-     if((tickCounter % 500) == 0)
-       BSP_LED_Toggle(LED5);
+    if(tickCounter != prevTick) {
+      prevTick = tickCounter;
+
+      if(((cnt++) % 1000) == 0) {
+        BSP_LED_Toggle(LED5);
+      }
+    }
   }
 }
 
 void task1(void)
 {
+  uint32_t prevTick = tickCounter;
+  uint32_t cnt = 500;
+
   while(true)
   {
-     if(((tickCounter + 200) % 500) == 0)
-       BSP_LED_Toggle(LED6);
+    if(tickCounter != prevTick) {
+      prevTick = tickCounter;
+
+      if(((cnt++) % 1000) == 0) {
+        BSP_LED_Toggle(LED6);
+      }
+    }
   }
 }
 
@@ -97,7 +124,11 @@ extern "C" void SVC_Handler()
       "ite eq\n"
       "mrseq r0, msp\n"
       "mrsne r0, psp\n"
-      "b svcHandler_C\n"
+      "push {lr}\n"
+      "bl svcHandler_C\n"
+      "pop {lr}\n"
+      "isb\n"
+      "bx lr\n"
       ".align 4\n"
   );
 }
@@ -109,20 +140,20 @@ extern "C" void svcHandler_C(void* _stackFrame)
 
   if(svcArg == 1)
     rtos_startFirstTask(*frame);
-
-  volatile int i;
-  i = 1;
 }
 
 void rtos_startFirstTask(StackFrame1& initialFrame)
 {
-  threadStackFrames[0] = initialFrame;
-  threadStackFrames[0].lr = 0;
+  threadPsp[0] = (void*)thread0Stack + sizeof(thread0Stack) - sizeof(FullStackFrame);
+  threadPsp[1] = (void*)thread1Stack + sizeof(thread0Stack) - sizeof(FullStackFrame);
 
-  threadStackFrames[0].pc = (uint32_t)task0;
-  threadStackFrames[1].pc = (uint32_t)task1;
+  FullStackFrame* frame = (FullStackFrame*)threadPsp[0];
+  frame->subFrame1 = initialFrame;
+  frame->subFrame1.pc = uint32_t(task0);
 
-  initialFrame.pc = threadStackFrames[0].pc;
+  frame = (FullStackFrame*)threadPsp[1];
+  frame->subFrame1 = initialFrame;
+  frame->subFrame1.pc = uint32_t(task1);
 }
 
 extern "C" void SysTick_Handler()
@@ -131,31 +162,33 @@ extern "C" void SysTick_Handler()
   if((tickCounter % 500) == 0)
     BSP_LED_Toggle(LED3);
 
+  SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
+}
+
+extern "C" void PendSV_Handler() __attribute__ ((naked));
+extern "C" void PendSV_Handler()
+{
+  asm
+  (
+      "mrs r0, psp\n"
+      "stmdb r0!, {r4-r11, r14}\n"
+      "push {lr}\n"
+      "bl pendSvHandler_C\n"
+      "ldmia r0!, {r4-r11, r14}\n"
+      "pop {lr}\n"
+      "msr psp, r0\n"
+      "isb\n"
+      "bx lr\n"
+      ".align 4\n"
+  );
+}
+
+extern "C" void* pendSvHandler_C(void* _stackFrame)
+{
+  threadPsp[currentTask] = _stackFrame;
+
   if(++currentTask == 2)
     currentTask = 0;
 
-//  SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
-}
-
-extern "C" void PendSV_Handler()
-{
-/*
-  asm
-  (
-      "tst lr, #4\n"
-      "ite eq\n"
-      "mrseq r0, msp\n"
-      "mrsne r0, psp\n"
-      "b pendSvHandler_C\n"
-      ".align 4\n"
-  );
-*/
-}
-
-extern "C" void pendSvHandler_C(void* _stackFrame)
-{
-  StackFrame1* frame = (StackFrame1*)_stackFrame;
-
-  volatile int i;
-  i = 1;
+  return (void*)threadPsp[currentTask];
 }
