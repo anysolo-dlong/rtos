@@ -1,21 +1,41 @@
 #include "stm32f4xx.h"
-#include "stm32f4xx_hal.h"
-#include "stm32f4_discovery.h"
 #include "core_cm4.h"
 
+
+namespace TestBoard {
+  namespace Leds {
+    void toggle(int n) {
+      switch(n) {
+        case 0:
+          GPIO_ToggleBits(GPIOD, GPIO_Pin_12);
+          break;
+
+        case 1:
+          GPIO_ToggleBits(GPIOD, GPIO_Pin_13);
+          break;
+
+        case 2:
+          GPIO_ToggleBits(GPIOD, GPIO_Pin_14);
+          break;
+
+        case 3:
+          GPIO_ToggleBits(GPIOD, GPIO_Pin_15);
+          break;
+
+        default:
+          for(;;) ; // todo: error
+      }
+    }
+  }
+}
 
 
 struct StackFrame1
 {
   uint32_t
-    r0,
-    r1,
-    r2,
-    r3,
+    r0, r1, r2, r3,
     r12,
-    lr,
-    pc,
-    xpsr
+    lr, pc, xpsr
   ;
 };
 
@@ -32,6 +52,9 @@ struct FullStackFrame {
 };
 
 
+void initUart();
+void leds_Init();
+
 void rtos_init();
 extern "C" void svcHandler_C(void*);
 extern "C" void* pendSvHandler_C(void* _stackFrame);
@@ -40,7 +63,6 @@ void task0(void);
 void task1(void);
 
 void rtos_startFirstTask(StackFrame1& initialFrame);
-
 
 volatile int currentTask = 0;
 
@@ -55,17 +77,13 @@ volatile uint32_t tickCounter = 0;
 int main(void) {
   for(volatile long i = 0; i < 3000000; i++) ;
 
-  HAL_Init();
   SystemInit();
-
-  BSP_LED_Init(LED3);
-  BSP_LED_Init(LED4);
-  BSP_LED_Init(LED5);
-  BSP_LED_Init(LED6);
-
-  BSP_LED_Toggle(LED3);
+  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
+  leds_Init();
 
   SysTick_Config (SystemCoreClock / 1000);
+//  initUart();
+//  puts("test");
 
   NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
 
@@ -79,6 +97,15 @@ int main(void) {
   for(;;) {}
 }
 
+void initUart()
+{
+}
+
+extern "C" int _write(int file, char *ptr, int len)
+{
+  return len;
+}
+
 
 void task0(void)
 {
@@ -90,9 +117,8 @@ void task0(void)
     if(tickCounter != prevTick) {
       prevTick = tickCounter;
 
-      if(((cnt++) % 1000) == 0) {
-        BSP_LED_Toggle(LED5);
-      }
+      if(((cnt++) % 1000) == 0)
+        TestBoard::Leds::toggle(0);
     }
   }
 }
@@ -107,9 +133,8 @@ void task1(void)
     if(tickCounter != prevTick) {
       prevTick = tickCounter;
 
-      if(((cnt++) % 1000) == 0) {
-        BSP_LED_Toggle(LED6);
-      }
+      if(((cnt++) % 1000) == 0)
+        TestBoard::Leds::toggle(1);
     }
   }
 }
@@ -159,7 +184,7 @@ extern "C" void SysTick_Handler()
 {
   tickCounter++;
   if((tickCounter % 500) == 0)
-    BSP_LED_Toggle(LED3);
+    TestBoard::Leds::toggle(3);
 
   SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
 }
@@ -191,4 +216,19 @@ extern "C" void* pendSvHandler_C(void* _stackFrame)
     currentTask = 0;
 
   return (void*)threadPsp[currentTask];
+}
+
+void leds_Init() {
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  /* Clock for GPIOD */
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+
+  /* Set pins */
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(GPIOD, &GPIO_InitStruct);
 }
