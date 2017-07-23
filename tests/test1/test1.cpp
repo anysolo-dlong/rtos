@@ -1,5 +1,6 @@
 #include "stm32f4xx.h"
 #include "core_cm4.h"
+#include "stdio.h"
 
 
 namespace TestBoard {
@@ -82,8 +83,8 @@ int main(void) {
   leds_Init();
 
   SysTick_Config (SystemCoreClock / 1000);
-//  initUart();
-//  puts("test");
+  initUart();
+  puts("test");
 
   NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
 
@@ -99,10 +100,44 @@ int main(void) {
 
 void initUart()
 {
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2);
+  GPIO_PinAFConfig(GPIOD, GPIO_PinSource3, GPIO_AF_USART2);
+
+  USART_InitTypeDef USART_InitStruct;
+
+  USART_InitStruct.USART_BaudRate = 115200;
+  USART_InitStruct.USART_WordLength = USART_WordLength_8b;
+  USART_InitStruct.USART_StopBits = USART_StopBits_1;
+  USART_InitStruct.USART_Parity = USART_Parity_No;
+  USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  USART_InitStruct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+  USART_Init(USART2, &USART_InitStruct);
+
+  USART_Cmd(USART2, ENABLE);
 }
 
 extern "C" int _write(int file, char *ptr, int len)
 {
+  if(!ptr)
+    return 0;
+
+  for(int i = 0; i < len; i++) {
+    while (!(USART2->SR & 0x00000040));
+    USART_SendData(USART2, ptr[i]);
+  }
+
   return len;
 }
 
