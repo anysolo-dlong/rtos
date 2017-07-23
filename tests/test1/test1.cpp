@@ -35,8 +35,7 @@ struct StackFrame1
 {
   uint32_t
     r0, r1, r2, r3,
-    r12,
-    lr, pc, xpsr
+    r12, lr, pc, xpsr
   ;
 };
 
@@ -67,8 +66,8 @@ void rtos_startFirstTask(StackFrame1& initialFrame);
 
 volatile int currentTask = 0;
 
-volatile uint32_t thread0Stack[128];
-volatile uint32_t thread1Stack[128];
+volatile uint32_t thread0Stack[128] __attribute__((aligned (8)));
+volatile uint32_t thread1Stack[128] __attribute__((aligned (8)));
 
 volatile void* threadPsp[2];
 
@@ -87,7 +86,7 @@ int main(void) {
   puts("test");
 
   NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
-
+  SCB->CCR |= SCB_CCR_STKALIGN_Msk;
   __set_PSP(uint32_t(thread0Stack) + sizeof(thread0Stack));
 
   __ISB();

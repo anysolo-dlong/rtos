@@ -1,0 +1,12 @@
+adding just <iostream> and std::cout << "hello" added a HUGE peace of garbage. So no standard streams here. Compiled without -g and with -O3
+dek@dek-note:~/prog/rtos$ ls -lh bin/
+total 164K
+-rwxr-xr-x 1 dek dek  17K Jul 23 10:56 test1.bin
+-rwxr-xr-x 1 dek dek 251K Jul 23 10:56 test1.elf
+
+ dek@dek-note:~/prog/rtos$ ls -lh bin/
+total 5.6M
+-rwxr-xr-x 1 dek dek 254K Jul 23 10:59 test1.bin
+-rwxr-xr-x 1 dek dek 5.4M Jul 23 10:59 test1.elf
+ 
+ 
