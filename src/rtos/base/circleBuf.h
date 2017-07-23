@@ -1,11 +1,14 @@
-#ifndef _olibs_circleBuf_h_
-#define _olibs_circleBuf_h_
-
+#ifndef __rtos_circleBuf_h__
+#define __rtos_circleBuf_h__
 
 #include <exception>
 
-#include <olibs/assert.h>
-#include <olibs/buf.h>
+#include <rtos/base/assert.h>
+#include <rtos/base/buf.h>
+
+
+namespace Rtos {
+namespace Base {
 
 
 class ByteCircleBuf
@@ -24,10 +27,10 @@ public:
   };
 
 private:
-  Olibs::Buf    m_data;
-  int           m_usedSize;
-  int           m_offsetPut;
-  int           m_offsetGet;
+  Buf  m_data;
+  int  m_usedSize;
+  int  m_offsetPut;
+  int  m_offsetGet;
 
 public:
   ByteCircleBuf(int size):
@@ -54,16 +57,16 @@ public:
     if(isFull())
       throw NoSpaceEx();
 
-    O_ASSERT(m_offsetPut <= getSize() - 1);
+    RTOS_ASSERT(m_offsetPut <= getSize() - 1);
 
     m_data[m_offsetPut ++] = b;
     ++m_usedSize;
-    O_ASSERT(m_usedSize <= getSize());
+    RTOS_ASSERT(m_usedSize <= getSize());
 
     if(m_offsetPut == getSize())
       m_offsetPut = 0;
 
-    O_ASSERT(m_offsetPut <= getSize() - 1);
+    RTOS_ASSERT(m_offsetPut <= getSize() - 1);
   }
 
   Byte get()
@@ -71,23 +74,23 @@ public:
     if(isEmpty())
       throw NoDataEx();
 
-    O_ASSERT(m_offsetGet <= getSize() - 1);
+    RTOS_ASSERT(m_offsetGet <= getSize() - 1);
 
     Byte b = m_data[m_offsetGet ++];
     --m_usedSize;
-    O_ASSERT(m_usedSize >= 0);
+    RTOS_ASSERT(m_usedSize >= 0);
 
     if(m_offsetGet == getSize())
       m_offsetGet = 0;
 
-    O_ASSERT(m_offsetGet <= getSize() - 1);
+    RTOS_ASSERT(m_offsetGet <= getSize() - 1);
 
     return b;
   }
 
   void put(const Byte* data, int size)
   {
-    O_ASSERT(size <= getFreeSize());
+    RTOS_ASSERT(size <= getFreeSize());
 
     for(int i = 0; i < size; ++i)
       put(data[i]);
@@ -105,5 +108,6 @@ public:
   }
 };
 
+}} // Base, Rtos
 
-#endif // _olibs_circleBuf_h_
+#endif // __rtos_circleBuf_h__

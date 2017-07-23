@@ -1,11 +1,12 @@
-#ifndef _anysolo_mclib_carray_h_
-#define _anysolo_mclib_carray_h_
+#ifndef __rtos_base_carray_h__
+#define __rtos_base_carray_h__
 
-#include "../base/assert.h"
-#include "../base/base.h"
+#include <rtos/base/assert.h>
+#include <rtos/base/base.h>
 
 
-namespace mclib {
+namespace Rtos {
+namespace Base {
 
 template <typename T>
 class CArray
@@ -13,7 +14,7 @@ class CArray
   T*      m_data;
   int     m_size;
 
-  void assertIndex(int n) const     {O_ASSERT(n >= 0 && n < m_size);}
+  void assertIndex(int n) const     {RTOS_ASSERT(n >= 0 && n < m_size);}
   T& ref(int n)                     {assertIndex(n); return m_data[n];}
   const T& ref(int n) const         {assertIndex(n); return m_data[n];}
 
@@ -36,7 +37,7 @@ public:
 template <typename T>
 CArray<T>::CArray(T* data, int size)
 {
-  O_ASSERT(data != 0 || size == 0);
+  RTOS_ASSERT(data != 0 || size == 0);
   m_data = data;
   m_size = size;
 
@@ -46,6 +47,6 @@ CArray<T>::CArray(T* data, int size)
 #endif
 }
 
-} // namespace mclib
+}} // Base, Rtos
 
-#endif // _anysolo_mclib_carray_h_
+#endif // __rtos_base_carray_h__

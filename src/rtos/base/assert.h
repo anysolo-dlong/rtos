@@ -1,10 +1,11 @@
-#ifndef _anysolo_mclib_assert_h_
-#define _anysolo_mclib_assert_h_
+#ifndef __rtos_base_assert_h__
+#define __rtos_base_assert_h__
 
-#include "../base/base.h"
+#include <rtos/base/base.h>
 
-#define O_DEBUG
 
+namespace Rtos {
+namespace Base {
 
 class Assert
 {
@@ -18,13 +19,15 @@ public:
   static AssertFunc getAssertFunc(AssertFunc func)  {return m_assertFunc;}
 };
 
+}} // Base, Rtos
 
-#ifdef O_DEBUG
-#define O_ASSERT(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
+
+#ifdef RTOS_DEBUG
+#define RTOS_ASSERT(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
 #else
-#define O_ASSERT(expr) /**/
+#define RTOS_ASSERT(expr) /**/
 #endif
 
-#define O_CHECK(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
+#define RTOS_CHECK(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
 
-#endif // _anysolo_mclib_assert_h_
+#endif // __rtos_base_assert_h__

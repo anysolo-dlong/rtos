@@ -7,7 +7,7 @@ set(CMAKE_C_COMPILER arm-none-eabi-gcc)
 set(CMAKE_CXX_COMPILER arm-none-eabi-c++)
 set(CMAKE_ASM_COMPILER arm-none-eabi-as )
 
-set(debugOpts "-g -O0")
+set(debugOpts "-g -O0 -DRTOS_DEBUG")
 #set(debugOpts "-O3")
 
 set(cppOpts "-std=c++11")
@@ -33,6 +33,7 @@ include_directories( extLibs/CMSIS/Include extLibs/CMSIS/Device/ST/STM32F4xx/Inc
 
 file(GLOB_RECURSE rtosSources src/rtos/*.c* src/rtos/*.s extLibs/*.c)
 add_library(rtos ${rtosSources})
+target_include_directories( rtos PUBLIC src )
 
 set(test1ElfFname "test1.elf")
 set(test1BinFname "test1.bin")
@@ -40,6 +41,7 @@ set(test1BinFname "test1.bin")
 file(GLOB_RECURSE test1SourceFiles tests/test1/*.c* tests/test1/*.s)
 
 add_executable(${test1ElfFname} ${test1SourceFiles})
+target_include_directories( ${test1ElfFname} PUBLIC src )
 target_link_libraries(${test1ElfFname} rtos m c gcc)
 set_target_properties(${test1ElfFname} PROPERTIES LINK_FLAGS "${def_cflags} -u _scanf_float -u _printf_float -Wl,--gc-sections,-T${linkerScript},-Map,map.map" )
 

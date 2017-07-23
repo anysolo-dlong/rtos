@@ -1,12 +1,13 @@
-#ifndef _anysolo_mclib_buf_h_
-#define _anysolo_mclib_buf_h_
+#ifndef __rtos_base_buf_h__
+#define __rtos_base_buf_h__
 
-#include <string.h>
+#include <cstring>
 
-#include "../base/assert.h"
+#include <rtos/base/assert.h>
 
 
-namespace mclib {
+namespace Rtos {
+namespace Base {
 
 class Buf
 {
@@ -40,8 +41,8 @@ public:
 
   const Byte* buf() const               {return m_buf;}
 
-  const Byte* ptr(int n) const          {O_ASSERT(n >=0 && n < size()); return m_buf + n;}
-  Byte* ptr(int n)                      {O_ASSERT(n >=0 && n < size()); return m_buf + n;}
+  const Byte* ptr(int n) const          {RTOS_ASSERT(n >=0 && n < size()); return m_buf + n;}
+  Byte* ptr(int n)                      {RTOS_ASSERT(n >=0 && n < size()); return m_buf + n;}
 
   const Byte& operator[] (int n) const  {return *ptr(n);}
   Byte& operator[] (int n)              {return *ptr(n);}
@@ -50,7 +51,7 @@ public:
   void fill(Byte b = 0)                 {memset(buf(), size(), b);}
 };
 
-} // namespace mclib
+}} // Base, Rtos
 
 
-#endif // _anysolo_mclib_buf_h_
+#endif // __rtos_base_buf_h__

@@ -1,14 +1,13 @@
-#ifndef _olibs_base_h_
-#define _olibs_base_h_
-
-//#define O_TESTING
+#ifndef __rtos_base_base_h__
+#define __rtos_base_base_h__
 
 
 #include <cstdint>
 
-namespace mclib {
-using Byte = uint8_t;
+namespace Rtos {
+namespace Base {
 
+using Byte = uint8_t;
 
 template <class T>
 T min(T n1, T n2)
@@ -28,6 +27,7 @@ T max(T n1, T n2)
     return n1;
 }
 
-#endif // _olibs_base_h_
+}} // Base, Rtos
 
-} // namespace mclib
+
+#endif // __rtos_base_base_h__

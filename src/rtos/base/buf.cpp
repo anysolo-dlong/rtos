@@ -1,7 +1,9 @@
-#include "../base/buf.h"
+#include <rtos/base/buf.h>
 
 
-namespace mclib {
+namespace Rtos {
+namespace Base {
+
 
 void Buf::alloc(int newSize)
 {
@@ -60,4 +62,4 @@ void Buf::realloc(int newSize)
   memcpy(m_buf, savedData.buf(), min(size(), savedData.size()));
 }
 
-} // namespace mclib
+}} // Base, Rtos
