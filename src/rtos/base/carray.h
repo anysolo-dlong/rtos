@@ -1,8 +1,8 @@
 #ifndef _anysolo_mclib_carray_h_
 #define _anysolo_mclib_carray_h_
 
-#include <anysolo/mclib/base.h>
-#include <anysolo/mclib/assert.h>
+#include "../base/assert.h"
+#include "../base/base.h"
 
 
 namespace mclib {

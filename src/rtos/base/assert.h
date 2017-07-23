@@ -1,7 +1,7 @@
 #ifndef _anysolo_mclib_assert_h_
 #define _anysolo_mclib_assert_h_
 
-#include <anysolo/mclib/base.h>
+#include "../base/base.h"
 
 #define O_DEBUG
 

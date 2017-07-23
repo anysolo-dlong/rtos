@@ -31,15 +31,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include_directories( extLibs/CMSIS/Include extLibs/CMSIS/Device/ST/STM32F4xx/Include extLibs/STM32F4xx_StdPeriph_Driver/inc )
 
-file(GLOB_RECURSE stdPeriphSources extLibs/STM32F4xx_StdPeriph_Driver/src/*.c*)
-add_library(stdPeriph ${stdPeriphSources})
-#target_include_directories( stdPeriph PUBLIC extLibs/STM32F4xx_StdPeriph_Driver/inc )
-
-
-file(GLOB_RECURSE mclibSources anysolo/mclib/*.c*)
-add_library(mclib ${mclibSources})
-
-file(GLOB_RECURSE rtosSources anysolo/rtos/*.c* anysolo/rtos/port/stm32f4xx/*.c* anysolo/rtos/port/stm32f4xx/*.s extLibs/syscalls.c)
+file(GLOB_RECURSE rtosSources src/rtos/*.c* src/rtos/*.s extLibs/*.c)
 add_library(rtos ${rtosSources})
 
 set(test1ElfFname "test1.elf")
@@ -48,8 +40,7 @@ set(test1BinFname "test1.bin")
 file(GLOB_RECURSE test1SourceFiles tests/test1/*.c* tests/test1/*.s)
 
 add_executable(${test1ElfFname} ${test1SourceFiles})
-target_include_directories( ${test1ElfFname} PUBLIC anysolo/rtos/port/stm32f4xx )
-target_link_libraries(${test1ElfFname} stdPeriph rtos mclib m c gcc)
+target_link_libraries(${test1ElfFname} rtos m c gcc)
 set_target_properties(${test1ElfFname} PROPERTIES LINK_FLAGS "${def_cflags} -u _scanf_float -u _printf_float -Wl,--gc-sections,-T${linkerScript},-Map,map.map" )
 
 add_custom_command(TARGET ${test1ElfFname} POST_BUILD

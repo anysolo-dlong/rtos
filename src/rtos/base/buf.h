@@ -1,8 +1,9 @@
 #ifndef _anysolo_mclib_buf_h_
 #define _anysolo_mclib_buf_h_
 
-#include <anysolo/mclib/assert.h>
 #include <string.h>
+
+#include "../base/assert.h"
 
 
 namespace mclib {
