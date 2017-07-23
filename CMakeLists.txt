@@ -8,7 +8,7 @@ set(CMAKE_CXX_COMPILER arm-none-eabi-c++)
 set(CMAKE_ASM_COMPILER arm-none-eabi-as )
 
 #set(debugOpts "-g -O0 -DRTOS_DEBUG")
-set(debugOpts "-g -O1")
+set(debugOpts "-O4")
 
 set(cppOpts "-std=c++11")
 

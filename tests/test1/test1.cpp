@@ -1,34 +1,8 @@
 #include "stm32f4xx.h"
 #include "core_cm4.h"
 #include "stdio.h"
+#include <rtos/base/testLeds.h>
 
-
-namespace TestBoard {
-  namespace Leds {
-    void toggle(int n) {
-      switch(n) {
-        case 0:
-          GPIO_ToggleBits(GPIOD, GPIO_Pin_12);
-          break;
-
-        case 1:
-          GPIO_ToggleBits(GPIOD, GPIO_Pin_13);
-          break;
-
-        case 2:
-          GPIO_ToggleBits(GPIOD, GPIO_Pin_14);
-          break;
-
-        case 3:
-          GPIO_ToggleBits(GPIOD, GPIO_Pin_15);
-          break;
-
-        default:
-          for(;;) ; // todo: error
-      }
-    }
-  }
-}
 
 
 struct StackFrame1
@@ -73,6 +47,7 @@ volatile void* threadPsp[2];
 
 volatile uint32_t tickCounter = 0;
 
+Rtos::Base::TestLeds testLeds;
 
 int main(void) {
   for(volatile long i = 0; i < 3000000; i++) ;
@@ -152,7 +127,7 @@ void task0(void)
       prevTick = tickCounter;
 
       if(((cnt++) % 1000) == 0)
-        TestBoard::Leds::toggle(0);
+        testLeds.toggle(0);
     }
   }
 }
@@ -168,7 +143,7 @@ void task1(void)
       prevTick = tickCounter;
 
       if(((cnt++) % 1000) == 0)
-        TestBoard::Leds::toggle(1);
+        testLeds.toggle(2);
     }
   }
 }
@@ -218,7 +193,7 @@ extern "C" void SysTick_Handler()
 {
   tickCounter++;
   if((tickCounter % 500) == 0)
-    TestBoard::Leds::toggle(3);
+    testLeds.toggle(3);
 
   SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
 }
