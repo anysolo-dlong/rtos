@@ -1,8 +1,7 @@
-#include <rtos/base/assert.h>
+#include <stdem/assert.h>
 
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 
 Assert::AssertFunc Assert::m_assertFunc = 0;
@@ -13,4 +12,4 @@ void Assert::doAssert(const char* expr, const char* fname, int line)
     m_assertFunc(expr, fname, line);
 }
 
-}} // Base, Rtos
+} // StdEm

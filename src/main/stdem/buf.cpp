@@ -1,8 +1,7 @@
-#include <rtos/base/buf.h>
+#include <stdem/buf.h>
 
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 
 void Buf::alloc(int newSize)
@@ -62,4 +61,4 @@ void Buf::realloc(int newSize)
   memcpy(m_buf, savedData.buf(), min(size(), savedData.size()));
 }
 
-}} // Base, Rtos
+} // StdEm

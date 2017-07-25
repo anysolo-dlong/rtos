@@ -1,11 +1,10 @@
-#ifndef __rtos_base_assert_h__
-#define __rtos_base_assert_h__
+#ifndef __stdem_base_assert_h__
+#define __stdem_base_assert_h__
 
-#include <rtos/base/base.h>
+#include <stdem/base.h>
 
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 class Assert
 {
@@ -19,15 +18,15 @@ public:
   static AssertFunc getAssertFunc(AssertFunc func)  {return m_assertFunc;}
 };
 
-}} // Base, Rtos
+} // StdEm
 
 
-#ifdef RTOS_DEBUG
-#define RTOS_ASSERT(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
+#ifdef STDEM_DEBUG
+#define STDEM_ASSERT(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
 #else
-#define RTOS_ASSERT(expr) /**/
+#define STDEM_ASSERT(expr) /**/
 #endif
 
-#define RTOS_CHECK(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
+#define STDEM_CHECK(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
 
-#endif // __rtos_base_assert_h__
+#endif // __stdem_base_assert_h__

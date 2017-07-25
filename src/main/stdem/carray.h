@@ -1,12 +1,11 @@
-#ifndef __rtos_base_carray_h__
-#define __rtos_base_carray_h__
+#ifndef __stdem_carray_h__
+#define __stdem_carray_h__
 
-#include <rtos/base/assert.h>
-#include <rtos/base/base.h>
+#include <stdem/assert.h>
+#include <stdem/base.h>
 
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 template <typename T>
 class CArray
@@ -47,6 +46,6 @@ CArray<T>::CArray(T* data, int size)
 #endif
 }
 
-}} // Base, Rtos
+} // StdEm
 
-#endif // __rtos_base_carray_h__
+#endif // __stdem_carray_h__

@@ -1,14 +1,13 @@
-#ifndef __rtos_circleBuf_h__
-#define __rtos_circleBuf_h__
+#ifndef __stdem_circleBuf_h__
+#define __stdem_circleBuf_h__
 
 #include <exception>
 
-#include <rtos/base/assert.h>
-#include <rtos/base/buf.h>
+#include <stdem/assert.h>
+#include <stdem/buf.h>
 
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 
 class ByteCircleBuf
@@ -108,6 +107,6 @@ public:
   }
 };
 
-}} // Base, Rtos
+} // StdEm
 
-#endif // __rtos_circleBuf_h__
+#endif // __stdem_circleBuf_h__

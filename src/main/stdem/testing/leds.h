@@ -1,18 +1,19 @@
-#ifndef __rtos_base_testLeds_h__
-#define __rtos_base_testLeds_h__
+#ifndef __STDEM_TESTING_LEDS_H__
+#define __STDEM_TESTING_LEDS_H__
 
-#include <rtos/base/base.h>
+#include <stdem/base.h>
+#include <stdem/testing/leds_port.h>
 
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
+namespace Testing {
 
-class TestLeds
+class Leds
 {
   uint32_t m_state;
 
 public:
-  TestLeds() {m_state = 0;}
+  Leds() {m_state = 0;}
 
   void toggle(int n)        {set(n, !isOn(n));}
   bool isOn(int n) const    {return (m_state & (1 << n)) != 0;}
@@ -28,11 +29,11 @@ private:
     }
 
 // ================= should be implemented for particular board =======================
-  const static int amount;
+  constexpr static int amountOfLeds = Port::amountOfLeds;
   void doSet(int n, bool on);
 };
 
-}} // Base, Rtos
+}} // Testing, StdEm
 
 
-#endif // __rtos_base_testLeds_h__
+#endif // __STDEM_TESTING_LEDS_H__

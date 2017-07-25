@@ -1,8 +1,9 @@
 #include "stm32f4xx.h"
 #include "core_cm4.h"
 #include "stdio.h"
-#include <rtos/base/testLeds.h>
 
+#include <stdem/testing/leds.h>
+//#include <stdem/test/testLogger.h>
 
 
 struct StackFrame1
@@ -47,7 +48,9 @@ volatile void* threadPsp[2];
 
 volatile uint32_t tickCounter = 0;
 
-Rtos::Base::TestLeds testLeds;
+StdEm::Testing::Leds testLeds;
+//Rtos::Base::TestLogger testLogger;
+
 
 int main(void) {
   for(volatile long i = 0; i < 3000000; i++) ;
@@ -59,6 +62,8 @@ int main(void) {
   SysTick_Config (SystemCoreClock / 1000);
   initUart();
   puts("test");
+//  std::string s = "sdsd";
+//  auto aa = s.find('a');
 
   NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
@@ -126,8 +131,10 @@ void task0(void)
     if(tickCounter != prevTick) {
       prevTick = tickCounter;
 
-      if(((cnt++) % 1000) == 0)
+      if(((cnt++) % 1000) == 0) {
         testLeds.toggle(0);
+//        testLogger << "Thread1" << " cnt= " << cnt << "\n";
+      }
     }
   }
 }

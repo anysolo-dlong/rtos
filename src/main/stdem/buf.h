@@ -1,13 +1,11 @@
-#ifndef __rtos_base_buf_h__
-#define __rtos_base_buf_h__
+#ifndef __stdem_buf_h__
+#define __stdem_buf_h__
 
 #include <cstring>
+#include <stdem/assert.h>
 
-#include <rtos/base/assert.h>
 
-
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 class Buf
 {
@@ -41,8 +39,8 @@ public:
 
   const Byte* buf() const               {return m_buf;}
 
-  const Byte* ptr(int n) const          {RTOS_ASSERT(n >=0 && n < size()); return m_buf + n;}
-  Byte* ptr(int n)                      {RTOS_ASSERT(n >=0 && n < size()); return m_buf + n;}
+  const Byte* ptr(int n) const          {STDEM_ASSERT(n >=0 && n < size()); return m_buf + n;}
+  Byte* ptr(int n)                      {STDEM_ASSERT(n >=0 && n < size()); return m_buf + n;}
 
   const Byte& operator[] (int n) const  {return *ptr(n);}
   Byte& operator[] (int n)              {return *ptr(n);}
@@ -51,7 +49,7 @@ public:
   void fill(Byte b = 0)                 {memset(buf(), size(), b);}
 };
 
-}} // Base, Rtos
+} // StdEm
 
 
-#endif // __rtos_base_buf_h__
+#endif // __stdem_buf_h__

@@ -1,11 +1,10 @@
-#ifndef __rtos_base_base_h__
-#define __rtos_base_base_h__
+#ifndef __stdem_base_base_h__
+#define __stdem_base_base_h__
 
 
 #include <cstdint>
 
-namespace Rtos {
-namespace Base {
+namespace StdEm {
 
 using Byte = uint8_t;
 
@@ -27,7 +26,7 @@ T max(T n1, T n2)
     return n1;
 }
 
-}} // Base, Rtos
+} // StdEm
 
 
-#endif // __rtos_base_base_h__
+#endif // __stdem_base_base_h__
