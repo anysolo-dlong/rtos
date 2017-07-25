@@ -1,9 +1,8 @@
 #include "stm32f4xx.h"
 #include "core_cm4.h"
-#include "stdio.h"
 
 #include <stdem/testing/leds.h>
-//#include <stdem/test/testLogger.h>
+#include <stdem/testing/logger.h>
 
 
 struct StackFrame1
@@ -48,8 +47,8 @@ volatile void* threadPsp[2];
 
 volatile uint32_t tickCounter = 0;
 
-StdEm::Testing::Leds testLeds;
-//Rtos::Base::TestLogger testLogger;
+StdEm::Testing::Leds leds;
+StdEm::Testing::TestLogger logger;
 
 
 int main(void) {
@@ -61,9 +60,7 @@ int main(void) {
 
   SysTick_Config (SystemCoreClock / 1000);
   initUart();
-  puts("test");
-//  std::string s = "sdsd";
-//  auto aa = s.find('a');
+  logger << "test\n";
 
   NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
@@ -132,8 +129,8 @@ void task0(void)
       prevTick = tickCounter;
 
       if(((cnt++) % 1000) == 0) {
-        testLeds.toggle(0);
-//        testLogger << "Thread1" << " cnt= " << cnt << "\n";
+        leds.toggle(0);
+        logger << "Thread1" << " cnt= " << cnt << "\n";
       }
     }
   }
@@ -150,7 +147,7 @@ void task1(void)
       prevTick = tickCounter;
 
       if(((cnt++) % 1000) == 0)
-        testLeds.toggle(2);
+        leds.toggle(2);
     }
   }
 }
@@ -200,7 +197,7 @@ extern "C" void SysTick_Handler()
 {
   tickCounter++;
   if((tickCounter % 500) == 0)
-    testLeds.toggle(3);
+    leds.toggle(3);
 
   SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
 }

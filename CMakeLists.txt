@@ -7,8 +7,8 @@ set(CMAKE_C_COMPILER arm-none-eabi-gcc)
 set(CMAKE_CXX_COMPILER arm-none-eabi-c++)
 set(CMAKE_ASM_COMPILER arm-none-eabi-as )
 
-#set(debugOpts "-g -O0 -DRTOS_DEBUG")
-set(debugOpts "-O4")
+set(debugOpts "-g -O0 -DRTOS_DEBUG")
+#set(debugOpts "-O4")
 
 set(cfg_activePort "stm32f4xx")
 
