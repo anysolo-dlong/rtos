@@ -23,15 +23,23 @@ class TestMethod
 {
   friend class TestCase;
 
+public:
+  using Num = int32_t;
+
+private:
   TestMethod*     m_next;
   char*           m_name;
   TestFunc        m_func;
+  Num             m_num;
+
+  static Num       m_prevNum;
 
 public:
   TestMethod(const char* name, TestFunc func);
   ~TestMethod();
 
   const char* name() const {return m_name;}
+  Num num() const          {return m_num;}
   void call() const        {m_func();}
 
   const TestMethod* next() const {return m_next;}
@@ -53,6 +61,8 @@ public:
   virtual ~TestCase();
 
   StdEm::Testing::Logger& logger() {STDEM_ASSERT(m_logger != 0); return *m_logger;}
+
+  const char* name() const {return m_name;}
 
   void addTest(const char* name, TestFunc testFunc);
 
@@ -77,6 +87,11 @@ public:
   TestRunner& operator<< (TestCase& testCase) {add(&testCase); return *this;}
 
   void run(StdEm::Testing::Logger& logger);
+  void hardwareReset();
+
+private:
+  bool findNextTest(const TestMethod*& foundMethod, TestCase*& foundCase);
+
 };
 
 }} // Testing, StdEm

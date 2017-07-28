@@ -17,17 +17,21 @@ char* integerToCstr(T n, char* buf, int bufSize, int radix = 10)
 
   buf[bufSize-1] = 0;
   int i = bufSize-2;
-  for(; n != 0; --i, n /= radix)
+  do
   {
     STDEM_ASSERT(i >= 0);
     int d = n % radix;
     buf[i] = digits[d];
-  }
+
+    --i;
+    n /= radix;
+  }while(n != 0);
 
   return buf + i + 1;
 }
 
 int strLen(const char* str);
+char* strDup(const char*);
 
 }} // Cstr, StdEm
 

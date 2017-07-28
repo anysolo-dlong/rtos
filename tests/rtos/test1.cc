@@ -3,6 +3,9 @@
 
 #include <stdem/testing/leds.h>
 #include <stdem/testing/logger.h>
+#include <stdem/testing/testCase.h>
+
+#include <functional>
 
 
 struct StackFrame1
@@ -48,19 +51,69 @@ volatile void* threadPsp[2];
 volatile uint32_t tickCounter = 0;
 
 StdEm::Testing::Leds leds;
-StdEm::Testing::TestLogger logger;
+StdEm::Testing::Logger logger;
 
+class Test1: public StdEm::Testing::TestCase
+{
+  int m_someData;
+
+public:
+  Test1(): TestCase("Test1")
+  {
+    m_someData = 100;
+
+    addTest("test1", [this] ()
+      {
+        logger() << "test1 body " << m_someData << "\n";
+        for(volatile long i = 0; i < 3000000; i++) ;
+      }
+    );
+
+    addTest("test2", [this] ()
+      {
+        logger() << "test2 body " << m_someData << "\n";
+        for(volatile long i = 0; i < 3000000; i++) ;
+      }
+    );
+
+    addTest("test3", [this] ()
+      {
+        logger() << "test3 body " << m_someData << "\n";
+        for(volatile long i = 0; i < 3000000; i++) ;
+      }
+    );
+  }
+
+  virtual void beforeTest()
+  {
+    ++m_someData;
+  }
+};
+
+int testExt = 10;
 
 int main(void) {
   for(volatile long i = 0; i < 3000000; i++) ;
 
   SystemInit();
+
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
   leds_Init();
 
-  SysTick_Config (SystemCoreClock / 1000);
+//  SysTick_Config (SystemCoreClock / 1000);
+
   initUart();
   logger << "test\n";
+  logger << "test" << testExt << "\n";
+  for(volatile long i = 0; i < 3000000; i++) ;
+
+  Test1 testCase1;
+  StdEm::Testing::TestRunner testRunner;
+  testRunner << testCase1;
+//  NVIC_SystemReset();
+  testRunner.run(logger);
+
+  for(;;) {}
 
   NVIC_SetPriority(PendSV_IRQn, 0xFF); // Set PendSV to lowest possible priority
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
@@ -199,7 +252,7 @@ extern "C" void SysTick_Handler()
   if((tickCounter % 500) == 0)
     leds.toggle(3);
 
-  SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
+//  SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // Set PendSV to pending
 }
 
 extern "C" void PendSV_Handler() __attribute__ ((naked));

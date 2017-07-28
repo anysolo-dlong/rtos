@@ -9,13 +9,15 @@ namespace StdEm {
 namespace Testing {
 
 
-TestLogger& TestLogger::operator<< (int n)
+Logger& Logger::operator<< (int n)
 {
   char buf[21];
   print(Cstr::integerToCstr(n, buf, sizeof(buf)));
+
+  return *this;
 }
 
-void TestLogger::print(const char* str)
+void Logger::print(const char* str)
   { _write(0, (char*)str, Cstr::strLen(str)); }
 
 }} // Testing, StdEm
