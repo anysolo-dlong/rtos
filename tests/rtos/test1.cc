@@ -25,51 +25,27 @@ uint32_t thread1Stack[128] __attribute__((aligned (8)));
 StdEm::Testing::Leds leds;
 StdEm::Testing::Logger logger;
 
-#if 0
-class Test1: public StdEm::Testing::TestCase
-{
-  int m_someData;
-
-public:
-  Test1(): TestCase("Test1")
-  {
-    m_someData = 100;
-
-    addTest("test1", [this] ()
-      {
-        logger() << "test1 body " << m_someData << "\n";
-        for(volatile long i = 0; i < 3000000; i++) ;
-      }
-    );
-
-    addTest("test2", [this] ()
-      {
-        logger() << "test2 body " << m_someData << "\n";
-        for(volatile long i = 0; i < 3000000; i++) ;
-      }
-    );
-
-    addTest("test3", [this] ()
-      {
-        logger() << "test3 body " << m_someData << "\n";
-        for(volatile long i = 0; i < 3000000; i++) ;
-      }
-    );
-  }
-
-  virtual void beforeTest()
-  {
-    ++m_someData;
-  }
-};
-
-int testExt = 10;
-#endif
 
 namespace Rtos {
   namespace Kernel {
     extern Scheduler scheduler;
 }}
+
+
+class Test1: public StdEm::Testing::TestCase {
+public:
+  Test1(): TestCase("Test1") {
+    addTest("test1", [this] () {
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(task0, 0, thread0Stack, sizeof(thread0Stack), 10));
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(task1, 0, thread1Stack, sizeof(thread1Stack), 10));
+      Rtos::Kernel::scheduler.start();
+
+      logger() << "test1 body\n";
+      for(;;) ;
+    });
+  }
+};
+
 
 // TODO lock?
 inline Rtos::Kernel::Tick getSysTick() {
@@ -87,18 +63,10 @@ int main(void) {
   initUart();
   logger << "test\n";
 
-  Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(task0, 0, thread0Stack, sizeof(thread0Stack), 10));
-  Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(task1, 0, thread1Stack, sizeof(thread1Stack), 10));
-  Rtos::Kernel::scheduler.start();
-
-//  logger << "test" << testExt << "\n";
-  for(volatile long i = 0; i < 3000000; i++) ;
-
-//  Test1 testCase1;
-//  StdEm::Testing::TestRunner testRunner;
-//  testRunner << testCase1;
-//  NVIC_SystemReset();
-//  testRunner.run(logger);
+  Test1 testCase1;
+  StdEm::Testing::TestRunner testRunner;
+  testRunner << testCase1;
+  testRunner.run(logger);
 
   for(;;) {}
 }
