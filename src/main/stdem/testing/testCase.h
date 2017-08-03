@@ -91,7 +91,6 @@ public:
 
 private:
   bool findNextTest(const TestMethod*& foundMethod, TestCase*& foundCase);
-
 };
 
 }} // Testing, StdEm

@@ -22,11 +22,11 @@ public:
 
 
 #ifdef STDEM_DEBUG
-#define STDEM_ASSERT(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
+#define STDEM_ASSERT(expr) {if(!(expr)) StdEm::Assert::doAssert(#expr, __FILE__, __LINE__);}
 #else
 #define STDEM_ASSERT(expr) /**/
 #endif
 
-#define STDEM_CHECK(expr) {if(!(expr)) Assert::doAssert(#expr, __FILE__, __LINE__);}
+#define STDEM_CHECK(expr) {if(!(expr)) StdEm::Assert::doAssert(#expr, __FILE__, __LINE__);}
 
 #endif // __stdem_base_assert_h__

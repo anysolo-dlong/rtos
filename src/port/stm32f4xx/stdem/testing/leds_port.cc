@@ -13,7 +13,7 @@ void Leds::doSet(int n, bool on) {
   constexpr static GPIO_TypeDef *port = GPIOD;
   constexpr static uint16_t pinMasks[amountOfLeds] = { GPIO_Pin_12, GPIO_Pin_13, GPIO_Pin_14, GPIO_Pin_15 };
 
-  STDEM_ASSERT(n >= 0 && n < amount);
+  STDEM_ASSERT(n >= 0 && n < amountOfLeds);
 
   const uint16_t pinMask = pinMasks[n];
 
