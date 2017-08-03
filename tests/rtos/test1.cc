@@ -14,8 +14,7 @@
 void initUart();
 void leds_Init();
 
-void task0(void);
-void task1(void);
+void taskFunc(void*);
 
 
 uint32_t thread0Stack[128] __attribute__((aligned (8)));
@@ -36,8 +35,8 @@ class Test1: public StdEm::Testing::TestCase {
 public:
   Test1(): TestCase("Test1") {
     addTest("test1", [this] () {
-      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(task0, 0, thread0Stack, sizeof(thread0Stack), 10));
-      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(task1, 0, thread1Stack, sizeof(thread1Stack), 10));
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, (void*)0, thread0Stack, sizeof(thread0Stack), 10));
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, (void*)1, thread1Stack, sizeof(thread1Stack), 10));
       Rtos::Kernel::scheduler.start();
 
       logger() << "test1 body\n";
@@ -115,10 +114,13 @@ extern "C" int _write(int file, char *ptr, int len)
 }
 
 
-void task0(void)
+void taskFunc(void* _arg)
 {
+  int arg = int(_arg);
   uint32_t prevTick = getSysTick();
-  uint32_t cnt = 0;
+  uint32_t cnt = arg == 0 ? 0 : 500;
+
+  const int ledNum = (arg == 0) ? 0 : 2;
 
   while(true)
   {
@@ -126,25 +128,9 @@ void task0(void)
       prevTick = getSysTick();
 
       if(((cnt++) % 1000) == 0) {
-        leds.toggle(0);
-        logger << "Thread1" << " cnt= " << cnt << "\n";
+        leds.toggle(ledNum);
+        logger << "Thread #" << arg << " cnt= " << cnt << "\n";
       }
-    }
-  }
-}
-
-void task1(void)
-{
-  uint32_t prevTick = getSysTick();
-  uint32_t cnt = 500;
-
-  while(true)
-  {
-    if(getSysTick() != prevTick) {
-      prevTick = getSysTick();
-
-      if(((cnt++) % 1000) == 0)
-        leds.toggle(2);
     }
   }
 }
