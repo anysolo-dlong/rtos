@@ -30,17 +30,42 @@ namespace Rtos {
     extern Scheduler scheduler;
 }}
 
+using StdEm::Testing::TestCase;
 
-class Test1: public StdEm::Testing::TestCase {
+class TestRunner: public StdEm::Testing::TestRunner
+{
+protected:
+  virtual void hardwareReset() override
+    { asm("svc #2"); }
+};
+
+struct ThreadArg {
+  int       m_num;
+  TestCase* m_testCase;
+  int64_t   m_counter;
+
+  ThreadArg(int num, TestCase* testCase)
+  {
+    m_num       = num;
+    m_testCase  = testCase;
+    m_counter   = 0;
+  }
+};
+
+ThreadArg* threadArgs[2];
+
+class Test1: public TestCase {
 public:
   Test1(): TestCase("Test1") {
     addTest("test1", [this] () {
-      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, (void*)0, thread0Stack, sizeof(thread0Stack), 10));
-      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, (void*)1, thread1Stack, sizeof(thread1Stack), 10));
+      threadArgs[0] = new ThreadArg(0, this);
+      threadArgs[1] = new ThreadArg(1, this);
+
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, threadArgs[0], thread0Stack, sizeof(thread0Stack), 10));
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, threadArgs[1], thread1Stack, sizeof(thread1Stack), 10));
       Rtos::Kernel::scheduler.start();
 
-      logger() << "test1 body\n";
-      for(;;) ;
+      STDEM_ASSERT(false /* never should be here */;)
     });
   }
 };
@@ -63,11 +88,71 @@ int main(void) {
   logger << "test\n";
 
   Test1 testCase1;
-  StdEm::Testing::TestRunner testRunner;
+  TestRunner testRunner;
   testRunner << testCase1;
   testRunner.run(logger);
 
   for(;;) {}
+}
+
+void finishTest()
+{
+  asm("svc #3");
+
+  logger << "counter0: " << threadArgs[0]->m_counter << "\n";
+  logger << "counter1: " << threadArgs[1]->m_counter << "\n";
+
+  int64_t counterDiff = threadArgs[0]->m_counter - threadArgs[1]->m_counter;
+  logger << "counterDiff: " << counterDiff << "\n";
+
+  const int64_t maxCounterDiff = threadArgs[0]->m_counter / 10000; // 0.01%
+  threadArgs[0]->m_testCase->finishTest(counterDiff < maxCounterDiff);
+}
+
+void taskFunc(void* _arg)
+{
+  // do not care to free memory from ThreadArg
+  ThreadArg* arg = (ThreadArg*)_arg;
+
+  uint32_t prevTick = getSysTick();
+  const int threadNum = arg->m_num;
+  uint32_t cnt = (threadNum == 0) ? 0 : 500;
+
+  const int ledNum = (threadNum == 0) ? 0 : 2;
+
+  while(true)
+  {
+    ++arg->m_counter;
+
+    if(getSysTick() != prevTick)
+    {
+      prevTick = getSysTick();
+
+      if(((cnt++) % 1000) == 0)
+      {
+        leds.toggle(ledNum);
+        logger << "Thread #" << threadNum << " cnt= " << cnt << ", led: " << ledNum << "\n";
+      }
+
+      if(threadNum == 0 && cnt > 9999)
+        finishTest();
+    }
+  }
+}
+
+void leds_Init() {
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  /* Clock for GPIOD */
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+
+  /* Set pins */
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(GPIOD, &GPIO_InitStruct);
 }
 
 void initUart()
@@ -111,41 +196,4 @@ extern "C" int _write(int file, char *ptr, int len)
   }
 
   return len;
-}
-
-
-void taskFunc(void* _arg)
-{
-  int arg = int(_arg);
-  uint32_t prevTick = getSysTick();
-  uint32_t cnt = arg == 0 ? 0 : 500;
-
-  const int ledNum = (arg == 0) ? 0 : 2;
-
-  while(true)
-  {
-    if(getSysTick() != prevTick) {
-      prevTick = getSysTick();
-
-      if(((cnt++) % 1000) == 0) {
-        leds.toggle(ledNum);
-        logger << "Thread #" << arg << " cnt= " << cnt << "\n";
-      }
-    }
-  }
-}
-
-void leds_Init() {
-  GPIO_InitTypeDef GPIO_InitStruct;
-
-  /* Clock for GPIOD */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-
-  /* Set pins */
-  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOD, &GPIO_InitStruct);
 }

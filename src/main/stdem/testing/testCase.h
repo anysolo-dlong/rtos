@@ -42,9 +42,11 @@ public:
   Num num() const          {return m_num;}
   void call() const        {m_func();}
 
-  const TestMethod* next() const {return m_next;}
+  TestMethod* next() const {return m_next;}
 };
 
+
+class TestRunner;
 
 class TestCase
 {
@@ -54,7 +56,12 @@ class TestCase
   TestMethod*   m_firstMethod;
   TestMethod*   m_lastMethod;
   TestCase*     m_nextCase;
+
+  TestRunner*   m_runner;
   Logger*       m_logger;
+
+  void setupForRunner(TestRunner* runner, Logger* logger)
+    {m_runner = runner; m_logger = logger;}
 
 public:
   TestCase(const char* name);
@@ -66,31 +73,44 @@ public:
 
   void addTest(const char* name, TestFunc testFunc);
 
-  const TestMethod* firstMethod() const {return m_firstMethod;}
-  TestCase* nextCase() const            {return m_nextCase;}
+  TestMethod* firstMethod() {return m_firstMethod;}
+  TestCase* nextCase()      {return m_nextCase;}
 
   virtual void beforeTest() {}
   virtual void beforeTestCase() {}
+
+  void finishTest(bool passed);
 };
 
 
 class TestRunner
 {
+  bool      m_hardwareResetBeforeTest;
   TestCase* m_firstCase;
   TestCase* m_lastCase;
 
+  StdEm::Testing::Logger*   m_logger;
+  TestCase*                 m_currentCase;
+  TestMethod*               m_currentMethod;
+
 public:
-  TestRunner();
+  TestRunner(bool hardwareResetBeforeTest = true);
+  virtual ~TestRunner() {}
 
   void add(TestCase* testCase);
+  void finishTest(bool passed);
 
   TestRunner& operator<< (TestCase& testCase) {add(&testCase); return *this;}
 
   void run(StdEm::Testing::Logger& logger);
-  void hardwareReset();
+  Logger& logger() const {STDEM_ASSERT(m_logger != 0); return *m_logger;}
+
+protected:
+  virtual void hardwareReset();
 
 private:
-  bool findNextTest(const TestMethod*& foundMethod, TestCase*& foundCase);
+  void reset();
+  bool findNextTest(TestMethod*& foundMethod, TestCase*& foundCase);
 };
 
 }} // Testing, StdEm

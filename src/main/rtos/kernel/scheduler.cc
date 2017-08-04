@@ -158,8 +158,20 @@ extern "C" void svcHandler_C(void* _stackFrame)
   StackFrame1* frame = (StackFrame1*)_stackFrame;
   uint8_t svcArg = *((const uint8_t*)(int)frame->pc-2);
 
-  if(svcArg == 1)
-    scheduler.fiu_startFirstTask(*frame);
+  switch(svcArg)
+  {
+    case 1:
+      scheduler.fiu_startFirstTask(*frame);
+      break;
+
+    case 2:
+      NVIC_SystemReset();
+      break;
+
+    case 3:
+      SysTick->CTRL  &= uint32_t(SysTick_CTRL_ENABLE_Msk);
+      break;
+  }
 }
 
 extern "C" void SysTick_Handler()

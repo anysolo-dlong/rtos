@@ -31,15 +31,22 @@ TestMethod::~TestMethod()
 TestCase::TestCase(const char* name)
 {
   m_nextCase = 0;
-  m_logger = 0;
   m_name = Cstr::strDup(name);
   m_firstMethod = 0;
   m_lastMethod  = 0;
+
+  m_runner = 0;
+  m_logger = 0;
 }
 
 TestCase::~TestCase()
   {delete [] m_name;}
 
+void TestCase::finishTest(bool passed)
+{
+  STDEM_ASSERT(m_runner != 0);
+  m_runner->finishTest(passed);
+}
 
 void TestCase::addTest(const char* name, TestFunc testFunc)
 {
@@ -82,9 +89,18 @@ struct RunnerState
 
 RunnerState runnerState __attribute__ ((section (".noinit")));
 
-TestRunner::TestRunner()
+TestRunner::TestRunner(bool hardwareResetBeforeTest)
 {
-  m_firstCase = m_lastCase  = 0;
+  m_firstCase = m_lastCase = 0;
+  reset();
+  m_hardwareResetBeforeTest = hardwareResetBeforeTest;
+}
+
+void TestRunner::reset()
+{
+  m_logger = 0;
+  m_currentCase = 0;
+  m_currentMethod = 0;
 }
 
 void TestRunner::add(TestCase* testCase)
@@ -106,11 +122,11 @@ inline void printTestName(Logger& logger, const TestCase* testCase, const TestMe
   logger << testCase->name() << ":" << testMethod->name();
 }
 
-bool TestRunner::findNextTest(const TestMethod*& foundMethod, TestCase*& foundCase)
+bool TestRunner::findNextTest(TestMethod*& foundMethod, TestCase*& foundCase)
 {
   for(TestCase* testCase = m_firstCase; testCase != 0; testCase = testCase->nextCase())
   {
-    for(const TestMethod* method = testCase->firstMethod(); method != 0; method = method->next())
+    for(TestMethod* method = testCase->firstMethod(); method != 0; method = method->next())
     {
       if(method->num() > runnerState.m_lastNum) {
         foundMethod = method;
@@ -125,43 +141,32 @@ bool TestRunner::findNextTest(const TestMethod*& foundMethod, TestCase*& foundCa
 
 void TestRunner::run(Logger& logger)
 {
+  reset();
+  m_logger = &logger;
+
   if(!runnerState.isInited())
     runnerState.init();
 
-  TestCase* testCase;
-  const TestMethod* method;
-
-  if(findNextTest(method, testCase))
+  if(findNextTest(m_currentMethod, m_currentCase))
   {
-    testCase->m_logger = &logger;
+    m_currentCase->setupForRunner(this, &logger);
 
     try
     {
-      printTestName(logger, testCase, method);
+      printTestName(logger, m_currentCase, m_currentMethod);
       logger << "...\n";
 
-      testCase->beforeTest();
-      testCase->beforeTestCase();
+      m_currentCase->beforeTest();
+      m_currentCase->beforeTestCase();
 
-      method->call();
+      m_currentMethod->call();
 
-      ++runnerState.m_passed;
-
-      printTestName(logger, testCase, method);
-      logger << " PASS\n";
+      finishTest(true);
     }
     catch(const std::exception& e)
     {
-      printTestName(logger, testCase, method);
-      logger << " FAIL\n";
+      finishTest(false);
     }
-
-    ++runnerState.m_processed;
-    runnerState.m_lastNum = method->num();
-    testCase->m_logger = 0;
-
-    for(volatile long i = 0; i < 3000000; i++) ;
-    hardwareReset();
   }
   else
   {
@@ -173,6 +178,27 @@ void TestRunner::run(Logger& logger)
 
     runnerState.init();
   }
+}
+
+void TestRunner::finishTest(bool passed)
+{
+  ++runnerState.m_processed;
+  runnerState.m_lastNum = m_currentMethod->num();
+  m_currentCase->setupForRunner(0, 0);
+
+  printTestName(logger(), m_currentCase, m_currentMethod);
+
+  if(passed) {
+    ++runnerState.m_passed;
+    logger() << " PASS\n";
+  }
+  else
+    logger() << " FAIL\n";
+  ;
+
+  for(volatile long i = 0; i < 3000000; i++) ;
+  if(m_hardwareResetBeforeTest)
+    hardwareReset();
 }
 
 }} // Testing, StdEm
