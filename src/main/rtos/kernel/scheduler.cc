@@ -39,6 +39,7 @@ void Tcb::init(StackFrame1& initialFrame)
   frame->m_subFrame1 = initialFrame;
   frame->m_subFrame1.pc = RegData(m_func);
   frame->m_subFrame1.r0 = RegData(m_funcArg);
+  frame->m_addRegs.r14 = 0xFFFFFFFD;
 }
 
 
@@ -200,21 +201,19 @@ extern "C" void PendSV_Handler()
 {
   asm volatile
   (
-      "push {lr}\n"
       "mrs r0, psp\n"
       "isb\n"
-      "and r1, lr, #0x10\n"
+      "tst lr, #0x10\n"
       "it eq\n"
       "vstmdbeq r0!, {s16-s31}\n"
       "stmdb r0!, {r4-r11, r14}\n"
       "bl pendSvHandler_C\n"
       "ldmia r0!, {r4-r11, r14}\n"
-      "and r1, lr, #0x10\n"
+      "tst lr, #0x10\n"
       "it eq\n"
       "vldmiaeq r0!, {s16-s31}\n"
       "msr psp, r0\n"
       "isb\n"
-      "pop {lr}\n"
       "bx lr\n"
       ".align 4\n"
   );
@@ -275,8 +274,6 @@ void Scheduler::insertInSleepThreads(Tcb* tcb)
 
   m_sleepThreads.insertTail(& tcb->m_sleepNode);
 }
-
-
 #endif
 
 }} // Kernel, Rtos

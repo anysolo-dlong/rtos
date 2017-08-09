@@ -74,8 +74,8 @@ public:
     });
 
     addTest("Switching threads using FPU", [this] () {
-      threadArgs[0] = new ThreadArg(0, this);
-      threadArgs[1] = new ThreadArg(1, this, [this] {finishSwitchingWithFpuTest();});
+      threadArgs[0] = new ThreadArg(0, this, [this] {finishSwitchingWithFpuTest();});
+      threadArgs[1] = new ThreadArg(1, this);
 
       Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, threadArgs[0], thread0Stack, sizeof(thread0Stack), 10));
       Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFuncWithFpu, threadArgs[1], thread1Stack, sizeof(thread1Stack), 10));
