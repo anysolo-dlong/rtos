@@ -15,6 +15,7 @@ void initUart();
 void leds_Init();
 
 void taskFunc(void*);
+void taskFuncWithFpu(void* _arg);
 
 
 uint32_t thread0Stack[128] __attribute__((aligned (8)));
@@ -40,15 +41,19 @@ protected:
 };
 
 struct ThreadArg {
-  int       m_num;
-  TestCase* m_testCase;
-  int64_t   m_counter;
+  int           m_num;
+  TestCase*     m_testCase;
+  int64_t       m_counter;
+  float         m_realNum;
+  std::function<void(void)> m_finishFunc;
 
-  ThreadArg(int num, TestCase* testCase)
+  ThreadArg(int num, TestCase* testCase, std::function<void(void)> finishFunc = 0)
   {
-    m_num       = num;
-    m_testCase  = testCase;
-    m_counter   = 0;
+    m_num         = num;
+    m_testCase    = testCase;
+    m_counter     = 0;
+    m_realNum     = 0;
+    m_finishFunc  = finishFunc;
   }
 };
 
@@ -56,17 +61,91 @@ ThreadArg* threadArgs[2];
 
 class Test1: public TestCase {
 public:
-  Test1(): TestCase("Test1") {
-    addTest("test1", [this] () {
-      threadArgs[0] = new ThreadArg(0, this);
+  Test1(): TestCase("scheduler") {
+    addTest("two threads with the same priority", [this] () {
+      threadArgs[0] = new ThreadArg(0, this, [this] {finishTwoThreadsTest();});
       threadArgs[1] = new ThreadArg(1, this);
 
       Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, threadArgs[0], thread0Stack, sizeof(thread0Stack), 10));
       Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, threadArgs[1], thread1Stack, sizeof(thread1Stack), 10));
       Rtos::Kernel::scheduler.start();
 
-      STDEM_ASSERT(false /* never should be here */;)
+      STDEM_ASSERT(false /* never should be here */);
     });
+
+    addTest("Switching threads using FPU", [this] () {
+      threadArgs[0] = new ThreadArg(0, this);
+      threadArgs[1] = new ThreadArg(1, this, [this] {finishSwitchingWithFpuTest();});
+
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFunc, threadArgs[0], thread0Stack, sizeof(thread0Stack), 10));
+      Rtos::Kernel::scheduler.addThread(new Rtos::Kernel::Tcb(taskFuncWithFpu, threadArgs[1], thread1Stack, sizeof(thread1Stack), 10));
+      Rtos::Kernel::scheduler.start();
+
+      STDEM_ASSERT(false /* never should be here */);
+    });
+  }
+
+  void finishTwoThreadsTest()
+  {
+    asm("svc #3");
+
+    const auto counter0 = threadArgs[0]->m_counter;
+    const auto counter1 = threadArgs[1]->m_counter;
+
+    logger() << "counter0: " << counter0 << "\n";
+    logger() << "counter1: " << counter1 << "\n";
+
+    int64_t counterDiff = counter0 - counter1;
+    logger() << "counterDiff: " << counterDiff << "\n";
+
+    const int64_t maxCounterDiff = counter0 / 10000; // 0.01%
+
+    bool success = true;
+
+    if(!(counter0 != 0 && counter1 != 0))
+    {
+      success = false;
+      logger() << "counter should be not zero\n";
+    }
+
+    if(!(StdEm::abs(counterDiff) < maxCounterDiff))
+    {
+      success = false;
+      logger() << "counter diff is too big\n";
+    }
+
+    threadArgs[0]->m_testCase->finishTest(success);
+  }
+
+  void finishSwitchingWithFpuTest()
+  {
+    asm("svc #3");
+
+    const auto counter0 = threadArgs[0]->m_counter;
+    const auto counter1 = threadArgs[1]->m_counter;
+
+    logger() << "counter0: " << counter0 << "\n";
+    logger() << "counter1: " << counter1 << "\n";
+
+    int64_t counterDiff = counter0 - counter1;
+    logger() << "counterDiff: " << counterDiff << "\n";
+
+    bool success = true;
+
+    if(!(counter0 != 0 && counter1 != 0))
+    {
+      success = false;
+      logger() << "counter should be not zero\n";
+    }
+
+    float diff = threadArgs[1]->m_realNum - threadArgs[1]->m_counter;
+    if(diff > 1.0)
+    {
+      success = false;
+      logger() << "int and float diff is too big: " << diff << "\n";
+    }
+
+    threadArgs[0]->m_testCase->finishTest(success);
   }
 };
 
@@ -85,7 +164,7 @@ int main(void) {
   leds_Init();
 
   initUart();
-  logger << "test\n";
+  logger << "\nStarting RTOS unit tests...\n";
 
   Test1 testCase1;
   TestRunner testRunner;
@@ -93,20 +172,6 @@ int main(void) {
   testRunner.run(logger);
 
   for(;;) {}
-}
-
-void finishTest()
-{
-  asm("svc #3");
-
-  logger << "counter0: " << threadArgs[0]->m_counter << "\n";
-  logger << "counter1: " << threadArgs[1]->m_counter << "\n";
-
-  int64_t counterDiff = threadArgs[0]->m_counter - threadArgs[1]->m_counter;
-  logger << "counterDiff: " << counterDiff << "\n";
-
-  const int64_t maxCounterDiff = threadArgs[0]->m_counter / 10000; // 0.01%
-  threadArgs[0]->m_testCase->finishTest(counterDiff < maxCounterDiff);
 }
 
 void taskFunc(void* _arg)
@@ -129,13 +194,34 @@ void taskFunc(void* _arg)
       prevTick = getSysTick();
 
       if(((cnt++) % 1000) == 0)
-      {
         leds.toggle(ledNum);
-        logger << "Thread #" << threadNum << " cnt= " << cnt << ", led: " << ledNum << "\n";
-      }
 
-      if(threadNum == 0 && cnt > 9999)
-        finishTest();
+      if(threadNum == 0 && cnt >= 3000)
+        if(arg->m_finishFunc)
+          arg->m_finishFunc();
+    }
+  }
+}
+
+void taskFuncWithFpu(void* _arg)
+{
+  // do not care to free memory from ThreadArg
+  ThreadArg* arg = (ThreadArg*)_arg;
+
+  uint32_t prevTick = getSysTick();
+  uint32_t cnt = 500;
+
+  while(true)
+  {
+    ++arg->m_counter;
+    arg->m_realNum += 0.001;
+
+    if(getSysTick() != prevTick)
+    {
+      prevTick = getSysTick();
+
+      if(((cnt++) % 1000) == 0)
+        leds.toggle(2);
     }
   }
 }

@@ -26,7 +26,15 @@ T max(T n1, T n2)
     return n1;
 }
 
-} // StdEm
+template <class T>
+T abs(T n)
+{
+  if(n < 0)
+    return -n;
+  else
+    return n;
+}
 
+} // StdEm
 
 #endif // __stdem_base_base_h__

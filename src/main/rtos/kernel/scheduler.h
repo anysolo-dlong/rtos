@@ -24,14 +24,27 @@ struct StackFrame1
 };
 
 struct StackFrameAddRegs {
+  // TODO: inverse the order of the registers here?
   RegData
     r4, r5, r6, r7, r8, r9, r10, r11, r14
   ;
 
 };
 
+struct StackFrameFpuRegs {
+  RegData s[16];
+};
+
+// todo: probably we do not need to know exact layout or the stack frames. Thus these structs contains too many detail.
+
 struct FullStackFrame {
   StackFrameAddRegs m_addRegs;
+  StackFrame1       m_subFrame1;
+};
+
+struct FullStackFpuFrame {
+  StackFrameAddRegs m_addRegs;
+  StackFrameFpuRegs m_fpu;
   StackFrame1       m_subFrame1;
 };
 

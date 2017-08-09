@@ -119,7 +119,7 @@ void TestRunner::add(TestCase* testCase)
 
 inline void printTestName(Logger& logger, const TestCase* testCase, const TestMethod* testMethod)
 {
-  logger << testCase->name() << ":" << testMethod->name();
+  logger << testCase->name() << " : " << testMethod->name();
 }
 
 bool TestRunner::findNextTest(TestMethod*& foundMethod, TestCase*& foundCase)

@@ -15,17 +15,26 @@ char* integerToCstr(T n, char* buf, int bufSize, int radix = 10)
 {
   STDEM_ASSERT(radix >= 0 && radix <= 16);
 
+  const bool isNeg = n < 0;
+  if(isNeg)
+    n = -n;
+
   buf[bufSize-1] = 0;
   int i = bufSize-2;
   do
   {
     STDEM_ASSERT(i >= 0);
+
     int d = n % radix;
+    STDEM_ASSERT(d >= 0 && d <= 15);
     buf[i] = digits[d];
 
     --i;
     n /= radix;
   }while(n != 0);
+
+  if(isNeg)
+    buf[i--] = '-';
 
   return buf + i + 1;
 }
