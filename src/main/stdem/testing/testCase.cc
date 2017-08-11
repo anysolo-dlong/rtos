@@ -42,12 +42,6 @@ TestCase::TestCase(const char* name)
 TestCase::~TestCase()
   {delete [] m_name;}
 
-void TestCase::finishTest(bool passed)
-{
-  STDEM_ASSERT(m_runner != 0);
-  m_runner->finishTest(passed);
-}
-
 void TestCase::addTest(const char* name, TestFunc testFunc)
 {
   TestMethod* testMethod = new TestMethod(name, testFunc);
@@ -63,6 +57,16 @@ void TestCase::addTest(const char* name, TestFunc testFunc)
     m_lastMethod = testMethod;
   }
 }
+
+void TestCase::finishTest(bool passed)
+{
+  STDEM_ASSERT(m_runner != 0);
+  m_runner->finishTest(passed);
+}
+
+void TestCase::runInTestContext(std::function<void(void)> code)
+  { runner().runInTestContext(code); }
+
 
 struct RunnerState
 {
@@ -151,22 +155,15 @@ void TestRunner::run(Logger& logger)
   {
     m_currentCase->setupForRunner(this, &logger);
 
-    try
-    {
-      printTestName(logger, m_currentCase, m_currentMethod);
-      logger << "...\n";
+    runInTestContext([this] {
+      printTestName(*m_logger, m_currentCase, m_currentMethod);
+      *m_logger << "...\n";
 
       m_currentCase->beforeTest();
       m_currentCase->beforeTestCase();
 
       m_currentMethod->call();
-
-      finishTest(true);
-    }
-    catch(const std::exception& e)
-    {
-      finishTest(false);
-    }
+    });
   }
   else
   {
@@ -179,6 +176,31 @@ void TestRunner::run(Logger& logger)
     runnerState.init();
   }
 }
+
+void TestRunner::runInTestContext(std::function<void(void)> code)
+{
+  logger() << "runInTestContext()\n";
+
+  try
+  {
+    code();
+    finishTest(true);
+  }
+  catch(const AssertionEx& e)
+  {
+    logger() << "ERROR: assertion \"" << e.assertion() << "\" failed.";
+    if(e.text()[0] != 0)
+      logger() << " " << e.text() << "\n";
+
+    finishTest(false);
+  }
+  catch(const std::exception& e)
+  {
+    logger() << "ERROR: unexpected exception: " << e.what() << "\n";
+    finishTest(false);
+  }
+}
+
 
 void TestRunner::finishTest(bool passed)
 {

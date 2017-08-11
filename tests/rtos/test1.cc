@@ -32,11 +32,13 @@ namespace Rtos {
 }}
 
 using StdEm::Testing::TestCase;
+namespace Asserts = StdEm::Testing::Assertions;
+
 
 class TestRunner: public StdEm::Testing::TestRunner
 {
 protected:
-  virtual void hardwareReset() override
+  void hardwareReset() override
     { asm("svc #2"); }
 };
 
@@ -53,7 +55,7 @@ struct ThreadArg {
     m_testCase    = testCase;
     m_counter     = 0;
     m_realNum     = 0;
-    m_finishFunc  = finishFunc;
+    m_finishFunc  = std::move(finishFunc);
   }
 };
 
@@ -89,63 +91,36 @@ public:
   {
     asm("svc #3");
 
-    const auto counter0 = threadArgs[0]->m_counter;
-    const auto counter1 = threadArgs[1]->m_counter;
+    // This thread was added into kernel in the proper TestRunner context, but now it is running out of it.
+    runInTestContext( [this] {
+      const auto counter0 = threadArgs[0]->m_counter;
+      const auto counter1 = threadArgs[1]->m_counter;
 
-    logger() << "counter0: " << counter0 << "\n";
-    logger() << "counter1: " << counter1 << "\n";
+      int64_t counterDiff = counter0 - counter1;
+      logger() << "counterDiff: " << counterDiff << "\n";
 
-    int64_t counterDiff = counter0 - counter1;
-    logger() << "counterDiff: " << counterDiff << "\n";
+      const int64_t maxCounterDiff = counter0 / 10000; // 0.01%
 
-    const int64_t maxCounterDiff = counter0 / 10000; // 0.01%
-
-    bool success = true;
-
-    if(!(counter0 != 0 && counter1 != 0))
-    {
-      success = false;
-      logger() << "counter should be not zero\n";
-    }
-
-    if(!(StdEm::abs(counterDiff) < maxCounterDiff))
-    {
-      success = false;
-      logger() << "counter diff is too big\n";
-    }
-
-    threadArgs[0]->m_testCase->finishTest(success);
+      Asserts::isTrue(counter0 != 0 && counter1 != 0, "counters should not be zero");
+      Asserts::isTrue(StdEm::abs(counterDiff) < maxCounterDiff, "counter diff is too big");
+    });
   }
 
   void finishSwitchingWithFpuTest()
   {
     asm("svc #3");
 
-    const auto counter0 = threadArgs[0]->m_counter;
-    const auto counter1 = threadArgs[1]->m_counter;
+    // This thread was added into kernel in the proper TestRunner context, but now it is running out of it.
+    runInTestContext( [this] {
+      const auto counter0 = threadArgs[0]->m_counter;
+      const auto counter1 = threadArgs[1]->m_counter;
 
-    logger() << "counter0: " << counter0 << "\n";
-    logger() << "counter1: " << counter1 << "\n";
+      float counterDiff = threadArgs[1]->m_realNum - threadArgs[1]->m_counter;
+      logger() << "counterDiff: " << counterDiff << "\n";
 
-    int64_t counterDiff = counter0 - counter1;
-    logger() << "counterDiff: " << counterDiff << "\n";
-
-    bool success = true;
-
-    if(!(counter0 != 0 && counter1 != 0))
-    {
-      success = false;
-      logger() << "counter should be not zero\n";
-    }
-
-    float diff = threadArgs[1]->m_realNum - threadArgs[1]->m_counter;
-    if(diff > 1.0)
-    {
-      success = false;
-      logger() << "int and float diff is too big: " << diff << "\n";
-    }
-
-    threadArgs[0]->m_testCase->finishTest(success);
+      Asserts::isTrue(counter0 != 0 && counter1 != 0, "counters should not be zero");
+      Asserts::isTrue(counterDiff < 1.0, "counter diff is too big");
+    });
   }
 };
 
@@ -155,7 +130,8 @@ inline Rtos::Kernel::Tick getSysTick() {
   return Rtos::Kernel::scheduler.tickCounter();
 }
 
-int main(void) {
+int main()
+{
   for(volatile long i = 0; i < 3000000; i++) ;
 
   SystemInit();
@@ -177,7 +153,7 @@ int main(void) {
 void taskFunc(void* _arg)
 {
   // do not care to free memory from ThreadArg
-  ThreadArg* arg = (ThreadArg*)_arg;
+  auto arg = (ThreadArg*)_arg;
 
   uint32_t prevTick = getSysTick();
   const int threadNum = arg->m_num;
@@ -206,7 +182,7 @@ void taskFunc(void* _arg)
 void taskFuncWithFpu(void* _arg)
 {
   // do not care to free memory from ThreadArg
-  ThreadArg* arg = (ThreadArg*)_arg;
+  auto arg = (ThreadArg*)_arg;
 
   uint32_t prevTick = getSysTick();
   uint32_t cnt = 500;

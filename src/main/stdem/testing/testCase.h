@@ -15,6 +15,31 @@ namespace Testing {
 using TestFunc = std::function<void(void)>;
 
 
+class AssertionEx: public std::exception
+{
+  const char* m_assertion;
+  const char* m_text;
+
+public:
+  AssertionEx(const char* assertion, const char* text): m_assertion(assertion), m_text(text) {}
+
+  const char* assertion() const {return m_assertion;}
+  const char* text() const      {return m_text;}
+};
+
+
+namespace Assertions {
+  inline void isTrue(bool val, const char* text) {
+    if (!val)
+      throw AssertionEx("isTrue", text);
+  }
+
+  inline void isFalse(bool val, const char* text) {
+    if (val)
+      throw AssertionEx("isFalse", text);
+  }
+}
+
 class TestCase;
 class TestRunner;
 
@@ -64,7 +89,7 @@ class TestCase
     {m_runner = runner; m_logger = logger;}
 
 public:
-  TestCase(const char* name);
+  explicit TestCase(const char* name);
   virtual ~TestCase();
 
   StdEm::Testing::Logger& logger() {STDEM_ASSERT(m_logger != 0); return *m_logger;}
@@ -80,6 +105,9 @@ public:
   virtual void beforeTestCase() {}
 
   void finishTest(bool passed);
+  void runInTestContext(std::function<void(void)> code);
+
+  TestRunner& runner() const {return *m_runner;}
 };
 
 
@@ -103,6 +131,8 @@ public:
   TestRunner& operator<< (TestCase& testCase) {add(&testCase); return *this;}
 
   void run(StdEm::Testing::Logger& logger);
+  void runInTestContext(std::function<void(void)> code);
+
   Logger& logger() const {STDEM_ASSERT(m_logger != 0); return *m_logger;}
 
 protected:
